@@ -15,7 +15,7 @@ bool sortByRemainingTime(const vector<int> &v1, const vector<int> &v2)
 {
     // used on SJF algorithm
     // sort process by shortest burst time
-    return v1[2] < v2[2];
+    return v1[3] < v2[3];
 }
 // processes[process[0:ProcessNumber, 1:ArrivalTime, 2:BurstTime, 3:WaitTime, 4:CompletionTime, 5:TurnAroundTime, 6:ResponseTime]]
 
@@ -78,64 +78,96 @@ vector<vector<int>> shortestJobFirst(vector<vector<int>> processes, bool preempt
     vector<vector<int>> result;
     sort(processes.begin(), processes.end(), sortByArrivalTime);
 
-    // processStack[Process[ProcessNumber, RemainingBurstTime, ResponseTime]]
+    // processStack[Process[0: ProcessNumber, 1: ArrivalTime, 2: OriginalBurstTime, 3: RemainingBurstTime, 4: ResponseTime]](the last 2 elements are only for preemptive)
     list<vector<int>> processStack;
+
     vector<int> currentProcess;
+    vector<int> previousProcess;
+    vector<int> tempProcess;
 
     int completionTime = 0;
     int turnAroundTime, waitingTime, responseTime;
     int clock = 0, visited = 0;
 
+    processStack.push_front(processes[0]);
+    clock = processes[0][1];
+    visited = 1;
     if (preemptive)
     {
-        result = processes;
-        processStack.push_front(processes[0]);
-        visited = 1;
+        (processStack.front()).push_back(processStack.front()[2]);
         while (!processStack.empty() || visited < processes.size())
         {
             // check if processes arrived
-            cout<<"h";
             for (int i = visited; i < processes.size() && processes[i][1] <= clock; i++)
             {
-                processStack.push_back(processes[i]);
+                currentProcess = processes[i];
+                currentProcess.push_back(currentProcess[2]);
+                //  duplicate burst time, so it can be used to calculate remaining burst time
+                processStack.push_back(currentProcess);
                 visited++;
             }
-            if (processStack.empty()){
+            if (processStack.empty())
+            {
                 clock++;
                 continue;
             }
             processStack.sort(sortByRemainingTime);
-            // cout<<"Process: "<<currentProcess[0]<<endl;
             currentProcess = processStack.front();
+
+            // check whether a process with a higher processNumber had already started executing
+            if (!previousProcess.empty() && previousProcess[3] == currentProcess[3] && previousProcess[0] != currentProcess[0])
+            {
+                while (previousProcess[0] != processStack.front()[0])
+                {
+                    tempProcess = processStack.front();
+                    processStack.pop_front();
+                    processStack.push_back(tempProcess);
+                }
+                currentProcess = processStack.front();
+            }
 
             // completion time= if burst ==0
             // response time = if burst initial == burst remaining
             // tat and wt if complete
+            if (currentProcess.size() < 5)
+            {
+                // set third variable as the response time
+                // responseTime = clock - arrivalTimeOfCurrentProcess
+                currentProcess.push_back(clock - currentProcess[1]);
+            }
+            if (currentProcess[3] == 0) // if remaining-burst-time == 0
+            {
+                // process has completed
 
-            // responseTime = previousCompletionTime - arrivalTimeOfCurrentProcess
-            responseTime = clock - currentProcess[1]; // clock - arrivalTime
-            // completionTime = previousCompletionTime + burstTime
-            completionTime = clock + currentProcess[2];
-            // turnAroundTime = CompletionTime - arrivalTime
-            turnAroundTime = completionTime - currentProcess[1];
-            // waitingTime = turnAroundTime - burstTime
-            waitingTime = turnAroundTime - currentProcess[2];
+                responseTime = currentProcess[4];
+                // completionTime = previousCompletionTime + burstTime
+                completionTime = clock;
+                // turnAroundTime = CompletionTime - arrivalTime
+                turnAroundTime = completionTime - currentProcess[1];
+                // waitingTime = turnAroundTime - burstTime
+                waitingTime = turnAroundTime - currentProcess[2];
 
-            currentProcess.push_back(waitingTime);
-            currentProcess.push_back(completionTime);
-            currentProcess.push_back(turnAroundTime);
-            currentProcess.push_back(responseTime);
+                currentProcess[3] = waitingTime;
+                currentProcess[4] = completionTime;
+                currentProcess.push_back(turnAroundTime);
+                currentProcess.push_back(responseTime);
+                result.push_back(currentProcess);
+                processStack.pop_front();
+                previousProcess.clear();
+            }
+            else
+            {
 
-            clock += currentProcess[2];
-            processStack.pop_front();
-            result.push_back(currentProcess);
-            // cout <<"Clock: "<< clock << endl;
+                --currentProcess[3];
+                processStack.pop_front();
+                processStack.push_back(currentProcess);
+                previousProcess = currentProcess;
+                clock++;
+            }
         }
     }
     else
     {
-        processStack.push_front(processes[0]);
-        visited = 1;
         while (!processStack.empty() || visited < processes.size())
         {
             // check whether processes have arrived during execution of previous process
@@ -145,7 +177,8 @@ vector<vector<int>> shortestJobFirst(vector<vector<int>> processes, bool preempt
                 visited++;
             }
             processStack.sort(sortByRemainingTime);
-            if (processStack.empty()){
+            if (processStack.empty())
+            {
                 clock++;
                 continue;
             }
@@ -158,7 +191,7 @@ vector<vector<int>> shortestJobFirst(vector<vector<int>> processes, bool preempt
             turnAroundTime = completionTime - currentProcess[1];
             // waitingTime = turnAroundTime - burstTime
             waitingTime = turnAroundTime - currentProcess[2];
-            
+
             currentProcess.push_back(waitingTime);
             currentProcess.push_back(completionTime);
             currentProcess.push_back(turnAroundTime);
@@ -184,9 +217,56 @@ vector<vector<int>> priorityScheduling(vector<vector<int>> processes, bool preem
     }
     return result;
 }
-vector<vector<int>> roundRobin(vector<vector<int>> processes)
+vector<vector<int>> roundRobin(vector<vector<int>> processes, int quanta)
 {
     vector<vector<int>> result;
+    sort(processes.begin(), processes.end(), sortByArrivalTime);
+    // processStack[Process[0: ProcessNumber, 1: ArrivalTime, 2: OriginalBurstTime, 3: RemainingBurstTime, 4: ResponseTime]](the last 2 elements are only for preemptive)
+    list<vector<int>> processStack;
+    vector<int> currentProcess;
 
+    int completionTime = 0;
+    int turnAroundTime, waitingTime, responseTime;
+    int clock = 0, visited = 0;
+
+    processStack.push_front(processes[0]);
+    clock = processes[0][1];
+
+    while (!processStack.empty() || visited < processes.size())
+    {
+        // check if processes arrived
+        for (int i = visited; i < processes.size() && processes[i][1] <= clock; i++)
+        {
+            currentProcess = processes[i];
+            currentProcess.push_back(currentProcess[2]);
+            //  duplicate burst time, so it can be used to calculate remaining burst time
+            processStack.push_back(currentProcess);
+            visited++;
+        }
+        if (processStack.empty())
+        {
+            clock++;
+            continue;
+        }
+        if (currentProcess.size() < 5)
+        {
+            // set third variable as the response time
+            // responseTime = clock - arrivalTimeOfCurrentProcess
+            currentProcess.push_back(clock - currentProcess[1]);
+        }
+        if (currentProcess[3] <= quanta)
+        {
+            // if process can finish executing
+            clock += currentProcess[3];
+
+            responseTime = currentProcess[4];
+            // completionTime = previousCompletionTime + burstTime
+            completionTime = clock;
+            // turnAroundTime = CompletionTime - arrivalTime
+            turnAroundTime = completionTime - currentProcess[1];
+            // waitingTime = turnAroundTime - burstTime
+            waitingTime = turnAroundTime - currentProcess[2];
+        }
+    }
     return result;
 }
