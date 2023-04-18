@@ -12,7 +12,8 @@ void test()
     // test fcfs
     // vector<vector<int>> result = firstComeFirstServe(originalList);
     // vector<vector<int>> result = shortestJobFirst(originalList, false);
-    vector<vector<int>> result = shortestJobFirst(originalList, true);
+    //vector<vector<int>> result = shortestJobFirst(originalList, true);
+    vector<vector<int>> result = roundRobin(originalList, 3);
     display(result);
 }
 //-----------------------------------
@@ -29,7 +30,7 @@ void display(vector<vector<int>> list)
 }
 vector<vector<int>> testListGenerator()
 {
-    int pickList = 3;
+    int pickList = 4;
     // change pickList to test different lists
     vector<vector<int>> list;
     if (pickList == 1)
@@ -52,13 +53,24 @@ vector<vector<int>> testListGenerator()
     }
     else if (pickList == 3)
     {
-        // SJF
+        // SJF preemptive
         //  slide 33
         list.push_back(vector<int>{1, 2, 1});
         list.push_back(vector<int>{2, 1, 5});
         list.push_back(vector<int>{3, 4, 1});
         list.push_back(vector<int>{4, 0, 6});
         list.push_back(vector<int>{5, 2, 3});
+    }
+    else if (pickList == 4)
+    {
+        // RR
+        //  slide 42
+        // switched wait time to 4th element (for consistency)
+        list.push_back(vector<int>{1, 0, 8});
+        list.push_back(vector<int>{2, 5, 2});
+        list.push_back(vector<int>{3, 1, 7});
+        list.push_back(vector<int>{4, 6, 3});
+        list.push_back(vector<int>{5, 8, 5});
     }
     return list;
 }

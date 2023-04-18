@@ -94,7 +94,7 @@ vector<vector<int>> shortestJobFirst(vector<vector<int>> processes, bool preempt
     visited = 1;
     if (preemptive)
     {
-        (processStack.front()).push_back(processStack.front()[2]);
+        processStack.front().push_back(processStack.front()[2]);
         while (!processStack.empty() || visited < processes.size())
         {
             // check if processes arrived
@@ -126,9 +126,6 @@ vector<vector<int>> shortestJobFirst(vector<vector<int>> processes, bool preempt
                 currentProcess = processStack.front();
             }
 
-            // completion time= if burst ==0
-            // response time = if burst initial == burst remaining
-            // tat and wt if complete
             if (currentProcess.size() < 5)
             {
                 // set third variable as the response time
@@ -217,7 +214,7 @@ vector<vector<int>> priorityScheduling(vector<vector<int>> processes, bool preem
     }
     return result;
 }
-vector<vector<int>> roundRobin(vector<vector<int>> processes, int quanta)
+vector<vector<int>> roundRobin(vector<vector<int>> processes, int quantum)
 {
     vector<vector<int>> result;
     sort(processes.begin(), processes.end(), sortByArrivalTime);
@@ -231,11 +228,12 @@ vector<vector<int>> roundRobin(vector<vector<int>> processes, int quanta)
 
     processStack.push_front(processes[0]);
     clock = processes[0][1];
-
+    visited = 1;
+    processStack.front().push_back(processStack.front()[2]);
     while (!processStack.empty() || visited < processes.size())
     {
         // check if processes arrived
-        for (int i = visited; i < processes.size() && processes[i][1] <= clock; i++)
+        for (int i = visited; i < processes.size() && processes[i][1] <= clock+quantum; i++)
         {
             currentProcess = processes[i];
             currentProcess.push_back(currentProcess[2]);
@@ -248,16 +246,23 @@ vector<vector<int>> roundRobin(vector<vector<int>> processes, int quanta)
             clock++;
             continue;
         }
+        currentProcess = processStack.front();
         if (currentProcess.size() < 5)
         {
             // set third variable as the response time
             // responseTime = clock - arrivalTimeOfCurrentProcess
             currentProcess.push_back(clock - currentProcess[1]);
         }
-        if (currentProcess[3] <= quanta)
+        if (currentProcess[3] <= quantum)
         {
             // if process can finish executing
             clock += currentProcess[3];
+            cout << endl
+                 << "finished" << endl;
+            cout << "Clock: " << clock << endl;
+            cout << "pno: " << currentProcess[0] << endl;
+            cout << "bt: " << currentProcess[3] << endl
+                 << endl;
 
             responseTime = currentProcess[4];
             // completionTime = previousCompletionTime + burstTime
@@ -266,7 +271,29 @@ vector<vector<int>> roundRobin(vector<vector<int>> processes, int quanta)
             turnAroundTime = completionTime - currentProcess[1];
             // waitingTime = turnAroundTime - burstTime
             waitingTime = turnAroundTime - currentProcess[2];
+
+            currentProcess[3] = waitingTime;
+            currentProcess[4] = completionTime;
+            currentProcess.push_back(turnAroundTime);
+            currentProcess.push_back(responseTime);
+
+            result.push_back(currentProcess);
+            processStack.pop_front();
+        }
+        else
+        {
+
+            cout << "Clock: " << clock << endl;
+            cout << "pno: " << currentProcess[0] << endl;
+            cout << "bt: " << currentProcess[3] << endl
+                 << endl;
+
+            currentProcess[3] -= quantum;
+            processStack.pop_front();
+            processStack.push_back(currentProcess);
+            clock += quantum;
         }
     }
+    sort(result.begin(), result.end(), sortByProcessNumber);
     return result;
 }
