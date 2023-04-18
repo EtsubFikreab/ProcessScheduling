@@ -12,8 +12,9 @@ void test()
     // test fcfs
     // vector<vector<int>> result = firstComeFirstServe(originalList);
     // vector<vector<int>> result = shortestJobFirst(originalList, false);
-    //vector<vector<int>> result = shortestJobFirst(originalList, true);
-    vector<vector<int>> result = roundRobin(originalList, 3);
+    // vector<vector<int>> result = shortestJobFirst(originalList, true);
+    //vector<vector<int>> result = roundRobin(originalList, 3);
+    vector<vector<int>> result = priorityScheduling(originalList, false);
     display(result);
 }
 //-----------------------------------
@@ -30,7 +31,7 @@ void display(vector<vector<int>> list)
 }
 vector<vector<int>> testListGenerator()
 {
-    int pickList = 4;
+    int pickList = 6;
     // change pickList to test different lists
     vector<vector<int>> list;
     if (pickList == 1)
@@ -64,7 +65,7 @@ vector<vector<int>> testListGenerator()
     else if (pickList == 4)
     {
         // RR
-        //  slide 42
+        // slide 42
         // switched wait time to 4th element (for consistency)
         list.push_back(vector<int>{1, 0, 8});
         list.push_back(vector<int>{2, 5, 2});
@@ -72,6 +73,28 @@ vector<vector<int>> testListGenerator()
         list.push_back(vector<int>{4, 6, 3});
         list.push_back(vector<int>{5, 8, 5});
     }
+    else if (pickList == 5)
+    {
+        // priority preemptive
+        // slide 49
+        list.push_back(vector<int>{1, 2, 0, 1});
+        list.push_back(vector<int>{2, 6, 1, 7});
+        list.push_back(vector<int>{3, 3, 2, 3});
+        list.push_back(vector<int>{4, 5, 3, 6});
+        list.push_back(vector<int>{5, 4, 4, 5});
+        list.push_back(vector<int>{6, 10, 5, 15});
+        list.push_back(vector<int>{7, 9, 6, 8});
+    }
+    else if (pickList == 6)
+    {
+        // priority non-preemptive
+        // slide 45
+        list.push_back(vector<int>{1, 3, 0, 10});
+        list.push_back(vector<int>{2, 2, 0, 1});
+        list.push_back(vector<int>{3, 4, 0, 2});
+        list.push_back(vector<int>{4, 5, 0, 1});
+        list.push_back(vector<int>{5, 2, 0, 5});
+    }
     return list;
 }
-//TODO: Test all if the first process arrives after 0 time eg 1,2... 
+// TODO: Test all if the first process arrives after 0 time eg 1,2...
