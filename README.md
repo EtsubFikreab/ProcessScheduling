@@ -1,2 +1,2 @@
 # ProcessScheduling
-Implementation of FCFS, SJF, Priority and Round Robin scheduling algorithm for processes
+Implementation of First-Come First-Served (FCFS), Shortest-Job-Next (SJN), Priority and Round Robin scheduling algorithm for processes
